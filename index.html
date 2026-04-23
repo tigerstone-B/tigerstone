@@ -407,6 +407,56 @@
     font-family: 'Pretendard', sans-serif;
   }
 
+  /* ── 후원 섹션 ── */
+  .donate-section {
+    margin: 0 16px 0;
+    padding: 14px;
+    background: var(--bg1);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .donate-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .donate-title span { color: var(--accent); }
+  .donate-btns {
+    display: flex;
+    gap: 6px;
+  }
+  .donate-btn {
+    flex: 1;
+    background: var(--bg2);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .donate-btn:hover { border-color: #FAE100; background: #1a1a00; }
+  .donate-btn .d-emoji { font-size: 16px; line-height: 1; }
+  .donate-btn .d-price {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .donate-btn .d-label {
+    font-size: 9px;
+    color: var(--text3);
+    font-weight: 500;
+  }
+
   /* ── 푸터 ── */
   .footer {
     text-align: center;
@@ -699,6 +749,28 @@
       <button class="btn btn-primary" id="saveAllBtn" disabled>💾 ZIP 저장</button>
     </div>
   </div>
+  <!-- 후원 섹션 -->
+  <div class="donate-section">
+    <div class="donate-title">☕ 타이거스톤이 도움이 됐다면 <span>후원</span>해주세요!</div>
+    <div class="donate-btns">
+      <a class="donate-btn" href="https://qr.kakaopay.com/FUqjnmVIc" target="_blank" rel="noopener">
+        <span class="d-emoji">🧡</span>
+        <span class="d-price">990원</span>
+        <span class="d-label">커피 한 모금</span>
+      </a>
+      <a class="donate-btn" href="https://qr.kakaopay.com/FUqjnmVIc" target="_blank" rel="noopener">
+        <span class="d-emoji">☕</span>
+        <span class="d-price">3,990원</span>
+        <span class="d-label">아메리카노 한 잔</span>
+      </a>
+      <a class="donate-btn" href="https://qr.kakaopay.com/FUqjnmVIc" target="_blank" rel="noopener">
+        <span class="d-emoji">🔥</span>
+        <span class="d-price">5,990원</span>
+        <span class="d-label">라떼 한 잔</span>
+      </a>
+    </div>
+  </div>
+
   <!-- 푸터 -->
   <div class="footer">
     <a href="https://www.instagram.com/food.raw/" target="_blank" rel="noopener">
