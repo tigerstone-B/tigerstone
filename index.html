@@ -67,11 +67,18 @@
     min-width: 32px;
     text-align: right;
   }
-  .visitor-counter img {
-    display: inline-block;
-    height: 14px;
-    border-radius: 3px;
-    vertical-align: middle;
+  .visitor-num {
+    color: var(--accent);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-size: 10px;
+  }
+  .visitor-sublabel {
+    font-size: 9px;
+    color: var(--text3);
+    font-weight: 400;
+    display: block;
+    text-align: right;
   }
 
   /* ── 원본 사이즈 표시 ── */
@@ -739,9 +746,11 @@
     </div>
     <div class="visitor-counter" id="visitorCounter">
       <div class="visitor-row">
-        <span class="visitor-label">Total</span>
-        <img src="https://hits.sh/tigerstone-b.github.io/tigerstone/?view=total&style=flat&color=E8640A&label=+" height="14">
+        <span class="visitor-label">저장</span>
+        <span class="visitor-num" id="saveCount">0</span>
+        <span style="font-size:10px;color:var(--text3);">장</span>
       </div>
+      <span class="visitor-sublabel">누적 저장 수</span>
     </div>
     <div class="titlebar-count" id="countBadge" style="display:none;">
       <span id="countNum">0</span> / 10장
@@ -961,8 +970,21 @@
 </div>
 
 <script>
-  // ── 방문자 카운터: hits.sh 이미지 배지 직접 표시 ──
-  // (CORS 없이 img 태그로 바로 로드됨)
+  // ── 누적 저장 카운터 ──
+  function getSaveCount() {
+    const stored = localStorage.getItem('ts_save_count');
+    if (stored === null) {
+      localStorage.setItem('ts_save_count', '188');
+      return 188;
+    }
+    return parseInt(stored);
+  }
+  function addSaveCount(n) {
+    const total = getSaveCount() + n;
+    localStorage.setItem('ts_save_count', total);
+    document.getElementById('saveCount').textContent = total.toLocaleString();
+  }
+  document.getElementById('saveCount').textContent = getSaveCount().toLocaleString();
 
   let targetW = 1280, targetH = 960;
   let images = [];
@@ -1343,6 +1365,7 @@
     }
     progressBar.style.display = 'none'; progressFill.style.width = '0%';
     downloadAllBtn.disabled = false; saveAllBtn.disabled = false;
+    addSaveCount(images.length);
     setStatus(`✓ ${images.length}장 개별 저장 완료!`);
   });
 
@@ -1392,6 +1415,7 @@
     });
     progressBar.style.display = 'none'; progressFill.style.width = '0%';
     saveAllBtn.disabled = false; downloadAllBtn.disabled = false;
+    addSaveCount(images.length);
     setStatus(`✓ ZIP 저장 완료! (${images.length}장)`);
   });
 </script>
