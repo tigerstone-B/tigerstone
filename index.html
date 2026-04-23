@@ -649,10 +649,6 @@
     </div>
     <div class="visitor-counter" id="visitorCounter">
       <div class="visitor-row">
-        <span class="visitor-label">Today</span>
-        <img src="https://hits.sh/tigerstone-b.github.io/tigerstone/?view=today&style=flat&color=E8640A&label=+" height="14">
-      </div>
-      <div class="visitor-row">
         <span class="visitor-label">Total</span>
         <img src="https://hits.sh/tigerstone-b.github.io/tigerstone/?view=total&style=flat&color=E8640A&label=+" height="14">
       </div>
@@ -899,9 +895,21 @@
 
   // 업로드
   dropzone.addEventListener('click', () => fileInput.click());
+
+  // 브라우저가 파일을 새 탭으로 여는 것 방지
+  document.addEventListener('dragover', e => e.preventDefault());
+  document.addEventListener('drop', e => e.preventDefault());
+
+  dropzone.addEventListener('dragenter', e => { e.preventDefault(); dropzone.classList.add('drag'); });
   dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
-  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
-  dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+  dropzone.addEventListener('dragleave', e => {
+    if (!dropzone.contains(e.relatedTarget)) dropzone.classList.remove('drag');
+  });
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag');
+    if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+  });
   fileInput.addEventListener('change', e => { handleFiles(e.target.files); fileInput.value = ''; });
 
   function handleFiles(files) {
