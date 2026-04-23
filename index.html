@@ -714,6 +714,7 @@
     justify-content: center;
     min-height: 180px;
     margin-bottom: 14px;
+    position: relative;
   }
   #editCanvas { display: block; max-width: 100%; max-height: 240px; }
 
@@ -909,11 +910,7 @@
   <div class="modal-sheet">
     <div class="modal-handle"></div>
 
-    <!-- 전체 미리보기 -->
-    <div style="font-size:10px;color:var(--text3);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">
-      전체 미리보기 <span style="font-weight:400;color:var(--text3);">— 탭해서 편집 전환</span>
-    </div>
-    <div class="quad-preview" id="quadPreview"></div>
+
 
     <!-- 현재 편집 이미지명 -->
     <div class="modal-title" id="modalTitle">이미지 조정</div>
@@ -935,7 +932,8 @@
 
     <!-- 메인 프리뷰 -->
     <div class="preview-wrap">
-      <canvas id="editCanvas"></canvas>
+      <canvas id="editCanvas" style="cursor:grab;touch-action:none;"></canvas>
+      <div style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.4);pointer-events:none;">✥ 드래그로 위치 조정</div>
     </div>
 
     <!-- 슬라이더 컨트롤 -->
@@ -945,16 +943,7 @@
         <input type="range" id="scaleSlider" min="50" max="200" value="100" step="1" oninput="onScale(this.value)">
         <span class="ctrl-val" id="scaleVal">100%</span>
       </div>
-      <div class="ctrl-item">
-        <span class="ctrl-label">좌우</span>
-        <input type="range" id="xSlider" min="-100" max="100" value="0" step="1" oninput="onX(this.value)">
-        <span class="ctrl-val" id="xVal">0</span>
-      </div>
-      <div class="ctrl-item">
-        <span class="ctrl-label">상하</span>
-        <input type="range" id="ySlider" min="-100" max="100" value="0" step="1" oninput="onY(this.value)">
-        <span class="ctrl-val" id="yVal">0</span>
-      </div>
+
       <div class="ctrl-item">
         <span class="ctrl-label">배경색</span>
         <input type="color" id="bgColor" value="#ffffff" oninput="onBg(this.value)">
@@ -1304,10 +1293,67 @@
     if (!silent) { renderEditCanvas(); renderQuadPreview(); }
   }
 
-  function onScale(v) { images[editIndex].scale = parseInt(v); document.getElementById('scaleVal').textContent = v + '%'; renderEditCanvas(); renderQuadPreview(); }
-  function onX(v) { images[editIndex].ox = parseInt(v); document.getElementById('xVal').textContent = v; renderEditCanvas(); renderQuadPreview(); }
-  function onY(v) { images[editIndex].oy = parseInt(v); document.getElementById('yVal').textContent = v; renderEditCanvas(); renderQuadPreview(); }
-  function onBg(v) { images[editIndex].bg = v; document.getElementById('bgVal').textContent = v; renderEditCanvas(); renderQuadPreview(); }
+  function onScale(v) { images[editIndex].scale = parseInt(v); document.getElementById('scaleVal').textContent = v + '%'; renderEditCanvas(); }
+  function onX(v) { images[editIndex].ox = parseInt(v); renderEditCanvas(); }
+  function onY(v) { images[editIndex].oy = parseInt(v); renderEditCanvas(); }
+  function onBg(v) { images[editIndex].bg = v; document.getElementById('bgVal').textContent = v; renderEditCanvas(); }
+
+  // ── 캔버스 드래그로 위치 조정 ──
+  (function() {
+    let dragging = false;
+    let lastX = 0, lastY = 0;
+
+    function getPos(e) {
+      if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function onStart(e) {
+      if (editIndex < 0) return;
+      e.preventDefault();
+      dragging = true;
+      const p = getPos(e);
+      lastX = p.x; lastY = p.y;
+      e.target.style.cursor = 'grabbing';
+    }
+
+    function onMove(e) {
+      if (!dragging || editIndex < 0) return;
+      e.preventDefault();
+      const p = getPos(e);
+      const dx = p.x - lastX;
+      const dy = p.y - lastY;
+      lastX = p.x; lastY = p.y;
+
+      const ec = document.getElementById('editCanvas');
+      // 민감도: 캔버스 크기 대비 비율로 ox/oy 조정
+      const sensitivity = 0.25;
+      const item = images[editIndex];
+      item.ox = Math.max(-100, Math.min(100, item.ox + dx * sensitivity));
+      item.oy = Math.max(-100, Math.min(100, item.oy + dy * sensitivity));
+      renderEditCanvas();
+    }
+
+    function onEnd(e) {
+      if (!dragging) return;
+      dragging = false;
+      const ec = document.getElementById('editCanvas');
+      ec.style.cursor = 'grab';
+    }
+
+    // 모달 열릴 때마다 이벤트 연결
+    document.addEventListener('DOMContentLoaded', () => {
+      const ec = document.getElementById('editCanvas');
+      // 마우스
+      ec.addEventListener('mousedown', onStart);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+      // 터치
+      ec.addEventListener('touchstart', onStart, { passive: false });
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onEnd);
+    });
+  })();
 
   // 상태 메시지
   let statusTimer;
