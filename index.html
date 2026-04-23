@@ -67,14 +67,12 @@
     min-width: 32px;
     text-align: right;
   }
-  .visitor-num {
-    color: var(--accent);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    min-width: 36px;
-    text-align: right;
+  .visitor-counter img {
+    display: inline-block;
+    height: 14px;
+    border-radius: 3px;
+    vertical-align: middle;
   }
-  .visitor-counter img { display: none; }
 
   /* ── 원본 사이즈 표시 ── */
   .origin-size-bar {
@@ -652,15 +650,12 @@
     <div class="visitor-counter" id="visitorCounter">
       <div class="visitor-row">
         <span class="visitor-label">Today</span>
-        <span class="visitor-num" id="visitorToday">…</span>
+        <img src="https://hits.sh/tigerstone-b.github.io/tigerstone/?view=today&style=flat&color=E8640A&label=+" height="14">
       </div>
       <div class="visitor-row">
         <span class="visitor-label">Total</span>
-        <span class="visitor-num" id="visitorTotal">…</span>
+        <img src="https://hits.sh/tigerstone-b.github.io/tigerstone/?view=total&style=flat&color=E8640A&label=+" height="14">
       </div>
-      <!-- hits.sh 카운터 (숨김) -->
-      <img id="hitsToday" src="https://hits.sh/tigerstone-b.github.io/tigerstone/?view=today&style=flat&color=E8640A&label=today" style="display:none;">
-      <img id="hitsTotal" src="https://hits.sh/tigerstone-b.github.io/tigerstone/?view=total&style=flat&color=E8640A&label=total" style="display:none;">
     </div>
     <div class="titlebar-count" id="countBadge" style="display:none;">
       <span id="countNum">0</span> / 10장
@@ -848,35 +843,8 @@
 </div>
 
 <script>
-  // ── 방문자 카운터 (hits.sh 외부 API) ──
-  (function() {
-    const base = 'https://hits.sh/tigerstone-b.github.io/tigerstone/';
-
-    function parseHitsCount(src) {
-      return new Promise(resolve => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        // hits.sh SVG를 fetch로 파싱
-        fetch(src)
-          .then(r => r.text())
-          .then(svg => {
-            const matches = svg.match(/>(\d+)</g);
-            if (matches && matches.length) {
-              const nums = matches.map(m => parseInt(m.replace(/[><]/g, '')));
-              resolve(Math.max(...nums).toLocaleString());
-            } else resolve('—');
-          })
-          .catch(() => resolve('—'));
-      });
-    }
-
-    parseHitsCount(base + '?view=today&style=flat').then(v => {
-      document.getElementById('visitorToday').textContent = v;
-    });
-    parseHitsCount(base + '?view=total&style=flat').then(v => {
-      document.getElementById('visitorTotal').textContent = v;
-    });
-  })();
+  // ── 방문자 카운터: hits.sh 이미지 배지 직접 표시 ──
+  // (CORS 없이 img 태그로 바로 로드됨)
 
   let targetW = 1280, targetH = 960;
   let images = [];
