@@ -993,7 +993,6 @@
   const countBadge = document.getElementById('countBadge');
   const countNum = document.getElementById('countNum');
   const modalBackdrop = document.getElementById('modalBackdrop');
-  const quadPreview = document.getElementById('quadPreview');
 
   // 프리셋
   document.querySelectorAll('.preset-btn').forEach(btn => {
@@ -1162,61 +1161,7 @@
     ctx.restore();
   }
 
-  // 4분할 동시 미리보기 렌더
-  function renderQuadPreview() {
-    quadPreview.innerHTML = '';
-    const slots = Math.min(images.length, 4);
-    // 1장이면 1칸, 2장이면 2칸, 3-4장이면 2x2
-    const cols = slots === 1 ? 1 : 2;
-    quadPreview.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-    // editIndex 기준으로 최대 4장 선택
-    // 편집 중인 이미지는 항상 첫 번째 슬롯에 표시
-    let indices = [];
-    if (images.length <= 4) {
-      indices = images.map((_, i) => i);
-    } else {
-      // editIndex 포함 앞뒤 총 4장
-      indices.push(editIndex);
-      for (let i = 0; i < images.length && indices.length < 4; i++) {
-        if (i !== editIndex) indices.push(i);
-      }
-    }
-
-    indices.slice(0, 4).forEach((imgIdx) => {
-      const item = images[imgIdx];
-      const cell = document.createElement('div');
-      cell.className = 'quad-cell' + (imgIdx === editIndex ? ' active-cell' : '');
-      cell.style.height = slots <= 2 ? '90px' : '80px';
-
-      const c = document.createElement('canvas');
-      c.width = 200; c.height = slots <= 2 ? 90 : 80;
-      drawThumb(c, item);
-      cell.appendChild(c);
-
-      const label = document.createElement('div');
-      label.className = 'quad-label';
-      const short = item.file.name.length > 10 ? item.file.name.slice(0,8)+'…' : item.file.name;
-      label.textContent = short;
-      cell.appendChild(label);
-
-      // 다른 이미지 셀 클릭 시 편집 전환
-      if (imgIdx !== editIndex) {
-        const nav = document.createElement('div');
-        nav.className = 'quad-nav';
-        const nb = document.createElement('button');
-        nb.className = 'quad-nav-btn';
-        nb.textContent = '편집';
-        nb.onclick = () => switchEdit(imgIdx);
-        nav.appendChild(nb);
-        cell.appendChild(nav);
-        cell.style.cursor = 'pointer';
-        cell.onclick = (e) => { if (e.target === cell || e.target === c || e.target === label) switchEdit(imgIdx); };
-      }
-
-      quadPreview.appendChild(cell);
-    });
-  }
 
   // 편집 대상 전환 (슬라이더 초기화 없이 현재 슬라이더 값으로 전환)
   function switchEdit(i) {
@@ -1227,7 +1172,6 @@
     syncSliders(item);
     setFit(item.fit, true);
     renderEditCanvas();
-    renderQuadPreview();
   }
 
   function syncSliders(item) {
@@ -1257,7 +1201,6 @@
     setFit(item.fit, true);
     modalBackdrop.classList.add('open');
     renderEditCanvas();
-    renderQuadPreview();
   }
 
   function cancelEdit() {
@@ -1290,7 +1233,7 @@
     ['cover','contain','stretch'].forEach(m => {
       document.getElementById('tab-' + m).classList.toggle('active', m === mode);
     });
-    if (!silent) { renderEditCanvas(); renderQuadPreview(); }
+    if (!silent) { renderEditCanvas(); }
   }
 
   function onScale(v) { images[editIndex].scale = parseInt(v); document.getElementById('scaleVal').textContent = v + '%'; renderEditCanvas(); }
