@@ -1178,10 +1178,7 @@
     document.getElementById('modalTitle').textContent = item.file.name.length > 30 ? item.file.name.slice(0,28)+'…' : item.file.name;
     document.getElementById('scaleSlider').value = item.scale;
     document.getElementById('scaleVal').textContent = item.scale + '%';
-    document.getElementById('xSlider').value = item.ox;
-    document.getElementById('xVal').textContent = item.ox;
-    document.getElementById('ySlider').value = item.oy;
-    document.getElementById('yVal').textContent = item.oy;
+
     document.getElementById('bgColor').value = item.bg || '#ffffff';
     document.getElementById('bgVal').textContent = item.bg || '#fff';
     // 원본 → 타겟 사이즈 표시
