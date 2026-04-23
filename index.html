@@ -455,6 +455,96 @@
     font-weight: 500;
   }
 
+  /* ── QR 팝업 ── */
+  .qr-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+  .qr-backdrop.open { display: flex; }
+  .qr-sheet {
+    background: var(--bg1);
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px 20px;
+    width: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    animation: slideUp 0.2s ease;
+  }
+  .qr-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+  }
+  .qr-title span { color: #FAE100; }
+  .qr-box {
+    background: #FAE100;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  #popupQR canvas { display: block; }
+  .qr-hint {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .qr-prices {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .qr-price-item {
+    flex: 1;
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+    padding: 7px 4px;
+    text-align: center;
+  }
+  .qr-price-item .qp-emoji { font-size: 14px; display: block; }
+  .qr-price-item .qp-price { font-size: 11px; font-weight: 700; color: var(--text); display: block; margin-top: 2px; }
+  .qr-price-item .qp-label { font-size: 9px; color: var(--text3); display: block; margin-top: 1px; }
+  .qr-links {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+  }
+  .qr-mobile-link {
+    flex: 1;
+    background: #FAE100;
+    color: #1a1200;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .qr-close {
+    flex-shrink: 0;
+    background: var(--bg2);
+    color: var(--text3);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .qr-close:hover { color: var(--text); }
+
   /* ── 푸터 ── */
   .footer {
     text-align: center;
@@ -744,21 +834,53 @@
   <div class="donate-section">
     <div class="donate-title">☕ 타이거스톤이 도움이 됐다면 <span>후원</span>해주세요!</div>
     <div class="donate-btns">
-      <a class="donate-btn" href="https://qr.kakaopay.com/FUqjnmVIc" target="_blank" rel="noopener">
+      <button class="donate-btn" onclick="openQR()">
         <span class="d-emoji">🧡</span>
         <span class="d-price">990원</span>
         <span class="d-label">커피 한 모금</span>
-      </a>
-      <a class="donate-btn" href="https://qr.kakaopay.com/FUqjnmVIc" target="_blank" rel="noopener">
+      </button>
+      <button class="donate-btn" onclick="openQR()">
         <span class="d-emoji">☕</span>
         <span class="d-price">3,990원</span>
         <span class="d-label">아메리카노 한 잔</span>
-      </a>
-      <a class="donate-btn" href="https://qr.kakaopay.com/FUqjnmVIc" target="_blank" rel="noopener">
+      </button>
+      <button class="donate-btn" onclick="openQR()">
         <span class="d-emoji">🔥</span>
         <span class="d-price">5,990원</span>
         <span class="d-label">라떼 한 잔</span>
-      </a>
+      </button>
+    </div>
+  </div>
+
+  <!-- QR 팝업 -->
+  <div class="qr-backdrop" id="qrBackdrop" onclick="closeQR(event)">
+    <div class="qr-sheet">
+      <div class="qr-title">카카오페이로 <span>후원</span>하기</div>
+      <div class="qr-box">
+        <div id="popupQR"></div>
+      </div>
+      <div class="qr-hint">📱 카카오페이 앱에서 QR 스캔<br>또는 모바일에서 아래 버튼 클릭</div>
+      <div class="qr-prices">
+        <div class="qr-price-item">
+          <span class="qp-emoji">🧡</span>
+          <span class="qp-price">990원</span>
+          <span class="qp-label">커피 한 모금</span>
+        </div>
+        <div class="qr-price-item">
+          <span class="qp-emoji">☕</span>
+          <span class="qp-price">3,990원</span>
+          <span class="qp-label">아메리카노</span>
+        </div>
+        <div class="qr-price-item">
+          <span class="qp-emoji">🔥</span>
+          <span class="qp-price">5,990원</span>
+          <span class="qp-label">라떼 한 잔</span>
+        </div>
+      </div>
+      <div class="qr-links">
+        <a class="qr-mobile-link" href="https://qr.kakaopay.com/FUqjnmVIc" target="_blank" rel="noopener">📲 모바일로 열기</a>
+        <button class="qr-close" onclick="closeQR()">닫기</button>
+      </div>
     </div>
   </div>
 
@@ -1260,6 +1382,29 @@
     saveAllBtn.disabled = false; downloadAllBtn.disabled = false;
     setStatus(`✓ ZIP 저장 완료! (${images.length}장)`);
   });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  let qrGenerated = false;
+  function openQR() {
+    document.getElementById('qrBackdrop').classList.add('open');
+    if (!qrGenerated) {
+      new QRCode(document.getElementById('popupQR'), {
+        text: 'https://qr.kakaopay.com/FUqjnmVIc',
+        width: 160,
+        height: 160,
+        colorDark: '#1a1200',
+        colorLight: '#FAE100',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      qrGenerated = true;
+    }
+  }
+  function closeQR(e) {
+    if (!e || e.target === document.getElementById('qrBackdrop')) {
+      document.getElementById('qrBackdrop').classList.remove('open');
+    }
+  }
 </script>
 </body>
 </html>
