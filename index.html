@@ -1040,11 +1040,23 @@
     if (remaining <= 0) { setStatus('최대 10장까지만 추가할 수 있어요!'); return; }
     const toAdd = arr.slice(0, remaining);
     if (arr.length > remaining) setStatus(`${arr.length - remaining}장 초과로 제외됐어요.`);
+    let loadedCount = 0;
     toAdd.forEach(f => {
       const reader = new FileReader();
       reader.onload = ev => {
         const img = new Image();
-        img.onload = () => { images.push({ file: f, img, scale: 100, ox: 0, oy: 0, bg: '#ffffff', fit: 'cover' }); renderGrid(); };
+        img.onload = () => {
+          images.push({ file: f, img, scale: 100, ox: 0, oy: 0, bg: '#ffffff', fit: 'cover' });
+          renderGrid();
+          loadedCount++;
+          // 마지막 이미지 로드 완료되면 그리드로 스크롤
+          if (loadedCount === toAdd.length) {
+            setTimeout(() => {
+              gridSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              setStatus(`✓ ${toAdd.length}장 추가됐어요!`);
+            }, 100);
+          }
+        };
         img.src = ev.target.result;
       };
       reader.readAsDataURL(f);
