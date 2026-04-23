@@ -52,7 +52,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 2px;
+    gap: 3px;
     margin-left: auto;
   }
   .visitor-row {
@@ -74,6 +74,7 @@
     min-width: 36px;
     text-align: right;
   }
+  .visitor-counter img { display: none; }
 
   /* ── 원본 사이즈 표시 ── */
   .origin-size-bar {
@@ -601,12 +602,15 @@
     <div class="visitor-counter" id="visitorCounter">
       <div class="visitor-row">
         <span class="visitor-label">Today</span>
-        <span class="visitor-num" id="visitorToday">0</span>
+        <span class="visitor-num" id="visitorToday">…</span>
       </div>
       <div class="visitor-row">
         <span class="visitor-label">Total</span>
-        <span class="visitor-num" id="visitorTotal">0</span>
+        <span class="visitor-num" id="visitorTotal">…</span>
       </div>
+      <!-- hits.sh 카운터 (숨김) -->
+      <img id="hitsToday" src="https://hits.sh/tigerstone-b.github.io/tigerstone/?view=today&style=flat&color=E8640A&label=today" style="display:none;">
+      <img id="hitsTotal" src="https://hits.sh/tigerstone-b.github.io/tigerstone/?view=total&style=flat&color=E8640A&label=total" style="display:none;">
     </div>
     <div class="titlebar-count" id="countBadge" style="display:none;">
       <span id="countNum">0</span> / 10장
@@ -772,26 +776,34 @@
 </div>
 
 <script>
-  // ── 방문자 카운터 ──
+  // ── 방문자 카운터 (hits.sh 외부 API) ──
   (function() {
-    const todayKey = 'ts_today_' + new Date().toISOString().slice(0,10);
-    const totalKey = 'ts_total';
-    // 오늘 방문 처리
-    if (!localStorage.getItem(todayKey)) {
-      localStorage.setItem(todayKey, '1');
-      // 어제 키 청소 (최근 7일치만 유지)
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith('ts_today_') && k !== todayKey) localStorage.removeItem(k);
+    const base = 'https://hits.sh/tigerstone-b.github.io/tigerstone/';
+
+    function parseHitsCount(src) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        // hits.sh SVG를 fetch로 파싱
+        fetch(src)
+          .then(r => r.text())
+          .then(svg => {
+            const matches = svg.match(/>(\d+)</g);
+            if (matches && matches.length) {
+              const nums = matches.map(m => parseInt(m.replace(/[><]/g, '')));
+              resolve(Math.max(...nums).toLocaleString());
+            } else resolve('—');
+          })
+          .catch(() => resolve('—'));
       });
     }
-    // Today: 오늘 세션 수 (새로고침마다 +1)
-    const todayCount = (parseInt(sessionStorage.getItem(todayKey) || '0')) + 1;
-    sessionStorage.setItem(todayKey, todayCount);
-    // Total: 누적
-    const total = (parseInt(localStorage.getItem(totalKey) || '0')) + 1;
-    localStorage.setItem(totalKey, total);
-    document.getElementById('visitorToday').textContent = todayCount.toLocaleString();
-    document.getElementById('visitorTotal').textContent = total.toLocaleString();
+
+    parseHitsCount(base + '?view=today&style=flat').then(v => {
+      document.getElementById('visitorToday').textContent = v;
+    });
+    parseHitsCount(base + '?view=total&style=flat').then(v => {
+      document.getElementById('visitorTotal').textContent = v;
+    });
   })();
 
   let targetW = 1280, targetH = 960;
@@ -1126,7 +1138,7 @@
       const { canvas, tw, th } = await renderFinal(item);
       const ext = item.file.name.lastIndexOf('.');
       const base = ext > -1 ? item.file.name.slice(0, ext) : item.file.name;
-      const filename = `${base}_${tw}x${th}.jpg`;
+      const filename = `${base}_${tw}x${th}.png`;
       await new Promise(resolve => {
         canvas.toBlob(blob => {
           const url = URL.createObjectURL(blob);
@@ -1141,7 +1153,7 @@
             URL.revokeObjectURL(url);
             resolve();
           }, 300);
-        }, 'image/jpeg', 0.92);
+        }, 'image/png');
       });
       progressFill.style.width = Math.round((i + 1) / images.length * 100) + '%';
       setStatus(`저장 중... (${i + 1}/${images.length})`, true);
@@ -1172,10 +1184,10 @@
     for (let i = 0; i < images.length; i++) {
       const item = images[i];
       const { canvas, tw, th } = await renderFinal(item);
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92));
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
       const ext = item.file.name.lastIndexOf('.');
       const base = ext > -1 ? item.file.name.slice(0, ext) : item.file.name;
-      zip.file(`${base}_${tw}x${th}.jpg`, blob);
+      zip.file(`${base}_${tw}x${th}.png`, blob);
       progressFill.style.width = Math.round((i + 1) / images.length * 100) + '%';
       setStatus(`압축 중... (${i + 1}/${images.length})`, true);
       await new Promise(r => setTimeout(r, 100));
