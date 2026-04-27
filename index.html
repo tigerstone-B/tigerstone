@@ -719,6 +719,25 @@
   #editCanvas { display: block; max-width: 100%; max-height: 240px; }
 
   .ctrl-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .rotate-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: -4px;
+  }
+  .rotate-btn {
+    flex: 1;
+    background: var(--bg2);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 7px 4px;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .rotate-btn:hover { border-color: var(--accent); color: var(--accent); }
   .ctrl-item { display: flex; align-items: center; gap: 10px; }
   .ctrl-label { font-size: 11px; color: var(--text3); font-weight: 500; width: 52px; flex-shrink: 0; }
   .ctrl-item input[type=range] { flex: 1; accent-color: var(--accent); }
@@ -988,6 +1007,16 @@
         <input type="range" id="scaleSlider" min="50" max="200" value="100" step="1" oninput="onScale(this.value)">
         <span class="ctrl-val" id="scaleVal">100%</span>
       </div>
+      <div class="ctrl-item">
+        <span class="ctrl-label">회전</span>
+        <input type="range" id="rotateSlider" min="-180" max="180" value="0" step="1" oninput="onRotate(this.value)">
+        <span class="ctrl-val" id="rotateVal">0°</span>
+      </div>
+      <div class="rotate-btns">
+        <button class="rotate-btn" onclick="rotateStep(-90)">↺ 90°</button>
+        <button class="rotate-btn" onclick="rotateStep(90)">↻ 90°</button>
+        <button class="rotate-btn" onclick="rotateReset()">↩ 초기화</button>
+      </div>
 
       <div class="ctrl-item" style="flex-direction:column; align-items:flex-start; gap:8px;">
         <span class="ctrl-label">배경색</span>
@@ -1022,20 +1051,36 @@
 
 <script>
   // ── 누적 저장 카운터 ──
-  function getSaveCount() {
-    const stored = localStorage.getItem('ts_save_count');
-    if (stored === null) {
-      localStorage.setItem('ts_save_count', '188');
-      return 188;
+  // ── 누적 저장 카운터 (CountAPI 실시간 공유) ──
+  const COUNT_NAMESPACE = 'tigerstone-b';
+  const COUNT_KEY = 'total-saves';
+  const COUNT_BASE = 450; // 이전 누적분
+
+  async function fetchSaveCount() {
+    try {
+      const res = await fetch(`https://counterapi.dev/api/${COUNT_NAMESPACE}/${COUNT_KEY}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const total = (data.value || 0) + COUNT_BASE;
+      document.getElementById('saveCount').textContent = total.toLocaleString();
+    } catch {
+      document.getElementById('saveCount').textContent = COUNT_BASE.toLocaleString();
     }
-    return parseInt(stored);
   }
-  function addSaveCount(n) {
-    const total = getSaveCount() + n;
-    localStorage.setItem('ts_save_count', total);
-    document.getElementById('saveCount').textContent = total.toLocaleString();
+
+  async function addSaveCount(n) {
+    try {
+      for (let i = 0; i < n; i++) {
+        await fetch(`https://counterapi.dev/api/${COUNT_NAMESPACE}/${COUNT_KEY}/increment`, { method: 'GET' });
+      }
+      fetchSaveCount();
+    } catch {
+      // 실패해도 UI는 업데이트
+      fetchSaveCount();
+    }
   }
-  document.getElementById('saveCount').textContent = getSaveCount().toLocaleString();
+
+  fetchSaveCount();
 
   let targetW = 1280, targetH = 960;
   let images = [];
@@ -1118,7 +1163,7 @@
       reader.onload = ev => {
         const img = new Image();
         img.onload = () => {
-          images.push({ file: f, img, scale: 100, ox: 0, oy: 0, bg: '#ffffff', fit: 'cover' });
+          images.push({ file: f, img, scale: 100, ox: 0, oy: 0, bg: '#ffffff', fit: 'cover', rotate: 0 });
           renderGrid();
           loadedCount++;
           // 마지막 이미지 로드 완료되면 그리드로 스크롤
@@ -1219,7 +1264,9 @@
     ctx.beginPath();
     ctx.rect(ox, oy, dw, dh);
     ctx.clip();
-    ctx.drawImage(item.img, cx - fw / 2, cy - fh / 2, fw, fh);
+    ctx.translate(cx, cy);
+    if (item.rotate) ctx.rotate((item.rotate * Math.PI) / 180);
+    ctx.drawImage(item.img, -fw / 2, -fh / 2, fw, fh);
     ctx.restore();
   }
 
@@ -1240,6 +1287,8 @@
     document.getElementById('modalTitle').textContent = item.file.name.length > 30 ? item.file.name.slice(0,28)+'…' : item.file.name;
     document.getElementById('scaleSlider').value = item.scale;
     document.getElementById('scaleVal').textContent = item.scale + '%';
+    document.getElementById('rotateSlider').value = item.rotate || 0;
+    document.getElementById('rotateVal').textContent = (item.rotate || 0) + '°';
 
     document.getElementById('bgColor').value = item.bg || '#ffffff';
     document.getElementById('bgVal').textContent = item.bg || '#ffffff';
@@ -1286,6 +1335,40 @@
     ctx.fillStyle = item.bg || '#ffffff';
     ctx.fillRect(0, 0, ec.width, ec.height);
     drawFit(ctx, item, ec.width, ec.height, 0, 0);
+
+    // ── 그리드 오버레이 ──
+    const W = ec.width, H = ec.height;
+    const COLS = 3, ROWS = 3;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 0.5;
+    // 세로선
+    for (let i = 1; i < COLS; i++) {
+      const x = Math.round(W * i / COLS);
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    // 가로선
+    for (let j = 1; j < ROWS; j++) {
+      const y = Math.round(H * j / ROWS);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // ── 중앙 십자선 (+) ──
+    const cx = W / 2, cy = H / 2;
+    const armLen = 12, gap = 4;
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 1;
+    // 가로
+    ctx.beginPath(); ctx.moveTo(cx - armLen, cy); ctx.lineTo(cx - gap, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + gap, cy); ctx.lineTo(cx + armLen, cy); ctx.stroke();
+    // 세로
+    ctx.beginPath(); ctx.moveTo(cx, cy - armLen); ctx.lineTo(cx, cy - gap); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy + gap); ctx.lineTo(cx, cy + armLen); ctx.stroke();
+    // 중심점
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(cx, cy, 1.5, 0, Math.PI * 2); ctx.fill();
+
+    ctx.restore();
   }
 
   function setFit(mode, silent) {
@@ -1297,6 +1380,26 @@
   }
 
   function onScale(v) { images[editIndex].scale = parseInt(v); document.getElementById('scaleVal').textContent = v + '%'; renderEditCanvas(); }
+  function onRotate(v) {
+    const deg = parseInt(v);
+    images[editIndex].rotate = deg;
+    document.getElementById('rotateVal').textContent = deg + '°';
+    renderEditCanvas();
+  }
+  function rotateStep(deg) {
+    const item = images[editIndex];
+    const newDeg = Math.max(-180, Math.min(180, (item.rotate || 0) + deg));
+    item.rotate = newDeg;
+    document.getElementById('rotateSlider').value = newDeg;
+    document.getElementById('rotateVal').textContent = newDeg + '°';
+    renderEditCanvas();
+  }
+  function rotateReset() {
+    images[editIndex].rotate = 0;
+    document.getElementById('rotateSlider').value = 0;
+    document.getElementById('rotateVal').textContent = '0°';
+    renderEditCanvas();
+  }
   function onX(v) { images[editIndex].ox = parseInt(v); renderEditCanvas(); }
   function onY(v) { images[editIndex].oy = parseInt(v); renderEditCanvas(); }
   function onBg(v) {
